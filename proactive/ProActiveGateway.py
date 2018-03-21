@@ -29,10 +29,15 @@ class scheduler_gateway:
         self.proactive_schduler_client = gg.jvm.org.ow2.proactive_grid_cloud_portal.smartproxy.RestSmartProxyImpl()
         connection_info = gg.jvm.org.ow2.proactive.authentication.ConnectionInfo(base_url + "/rest", username, password, credentials_file, insecure)
         self.proactive_schduler_client.init(connection_info);
+        
+        
+    def disconnect(self):
+        return self.proactive_schduler_client.disconnect();    
     
     def submitFromCatalog(self, bucket_name, workflow_name):
-        
         return self.proactive_schduler_client.submitFromCatalog(self.base_url + "/catalog",bucket_name, workflow_name).getReadableName();
+    
+    
 
     
         
