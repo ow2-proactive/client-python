@@ -36,10 +36,10 @@ class ProActiveGateway:
         self.log4py_props_file = log4py_props_file
 
         if self.debug:
-            if log4j_props_file:
+            if log4j_props_file is not None:
                 self.log4j_props_file = log4j_props_file
             else:
-                self.log4j_props_file = os.path.join(self.root_dir + "/java", 'log4j.properties')
+                self.log4j_props_file = os.path.join(self.root_dir, 'java', 'log4j.properties')
             if self.log4py_props_file is None:
                 self.log4py_props_file = os.path.join(self.root_dir, 'logging.conf')
             self.javaopts.append('-Dlog4j.configuration=file:' + self.log4j_props_file)
@@ -50,13 +50,23 @@ class ProActiveGateway:
         self.logger = logging.getLogger('ProactiveGateway')
 
         self.logger.debug('Launching JVM gateway with javaopts = ' + str(self.javaopts))
-        self.runtime_gateway = self.gateway.launch_gateway(
-            classpath=os.path.normpath(self.current_path),
-            die_on_exit=True,
-            javaopts=self.javaopts,
-            redirect_stdout=self.redirect_stdout,
-            redirect_stderr=self.redirect_stderr,
-        )
+        try:
+            self.runtime_gateway = self.gateway.launch_gateway(
+                classpath=os.path.normpath(self.current_path),
+                die_on_exit=True,
+                javaopts=self.javaopts,
+                redirect_stdout=self.redirect_stdout,
+                redirect_stderr=self.redirect_stderr,
+            )
+        except Exception:
+            self.runtime_gateway = self.gateway.launch_gateway(
+                classpath=os.path.normpath(self.current_path),
+                die_on_exit=True,
+                javaopts=self.javaopts,
+                redirect_stdout=self.redirect_stdout,
+                redirect_stderr=None,
+            )
+            self.logger.warning('stderr redirection had to be cancelled.')
         self.logger.debug('JVM gateway launched with success')
         self.proactive_factory = ProactiveFactory(self.runtime_gateway)
         self.proactive_script_language = ProactiveScriptLanguage()
@@ -91,7 +101,9 @@ class ProActiveGateway:
         self.logger.debug('Reconnected')
 
     def terminate(self):
+        self.logger.debug('Terminating the ProActive server')
         self.proactive_scheduler_client.terminate()
+        self.logger.debug('Terminated.')
 
     def submitWorkflowFromCatalog(self, bucket_name, workflow_name, workflow_variables={}):
 
